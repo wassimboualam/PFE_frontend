@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/lib/auth';
+import axios from "axios";
 
 const formSchema = z.object({
   username: z.string().min(1, { message: 'L\'identifiant est obligatoire' }),
@@ -35,27 +36,23 @@ export function LoginForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
+    const { password, username } = values;
     try {
-      const result = await login(values.username, values.password);
-      
-      if (result.success) {
-        toast({
-          title: 'Connexion réussie',
-          description: 'Vous allez être redirigé vers votre tableau de bord.',
-        });
-        router.push('/dashboard');
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Erreur de connexion',
-          description: result.message,
-        });
-      }
-    } catch (error) {
+      // go to server and check if user exists
+      await axios.post("http://localhost:9000/api/auth/login", 
+        { username, password },
+        { withCredentials: true }
+      )
+      toast({
+        title: 'Connexion réussie',
+        description: 'Vous allez être redirigé vers votre tableau de bord.',
+      });
+      router.push('/dashboard');
+    } catch (error:any) {
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: 'Une erreur s\'est produite lors de la connexion.',
+        description: error.response?.data?.message || 'Login failed',
       });
     } finally {
       setIsLoading(false);
